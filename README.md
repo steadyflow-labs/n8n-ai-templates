@@ -16,8 +16,14 @@ Production-minded n8n workflows for small businesses: AI that answers only from 
 - **No silent failures.** Errors and handoffs go to Slack.
 - **Your accounts.** Everything runs in your n8n, with your keys.
 
-## Demo
-43-second walkthrough of the support chatbot: [media/kettle-hill-chatbot-demo.mp4](media/kettle-hill-chatbot-demo.mp4)
+## Demos
+- Support chatbot, 43 s: [media/kettle-hill-chatbot-demo.mp4](media/kettle-hill-chatbot-demo.mp4)
+- PDF purchase orders → CSV, 36 s, from a real test run on a faxed, rotated scan: [media/pdf-po-demo.mp4](media/pdf-po-demo.mp4)
+
+**PDF template test (Nov 2026, Claude Sonnet 5.5):** a clean system PDF passed with no flags; a faxed PO with a cover sheet, pages rotated 90° and scan noise was read correctly (PO number, all lines, carrier account) and its unknown part was flagged with the closest catalog match. About 5 seconds and 6k input tokens per PDF.
+
+## Also on Apify
+[Website to RAG Knowledge Base](https://apify.com/serkan1907/website-to-rag-knowledge-base): crawl a site's public pages into heading-aware chunks for the chatbot template.
 
 ![PDF purchase order workflow](media/pdf-po-canvas.png)
 

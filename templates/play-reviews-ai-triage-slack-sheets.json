@@ -1,0 +1,527 @@
+{
+  "name": "Triage Google Play reviews with AI: urgent Slack alerts, daily digest and Google Sheets log",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Triage Google Play reviews with AI: urgent Slack alerts, daily digest and Google Sheets log\n\n### How it works\n\nThis workflow runs every morning to retrieve recent Google Play reviews via an Apify actor, filter for new reviews, and use Claude-powered AI extraction to classify and triage them. It logs the enriched review data to Google Sheets, sends immediate Slack alerts for urgent or high-priority reviews, and posts a grouped daily digest for the remaining reviews. A separate lower branch checks app-level rating and release summary warnings and posts them to Slack even when there are no new reviews.\n\n### Setup steps\n\n- Configure the schedule trigger for the desired morning run time and timezone.\n- Create a Header Auth credential for Apify (name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`). In the Apify node, set `apps` (Play links, package names or app names) and `countries`.\n- Configure Anthropic/Claude credentials for the AI triage node and adjust the extraction schema or prompt as needed.\n- Create a Google Sheet with a `Reviews` tab and this header row: `date, app, appId, country, rating, version, category, severity, summary, review, replyDraft, language, reviewUrl, reviewId`. Paste its URL in the Sheets node.\n- Connect Slack credentials and choose the channels for urgent review alerts, daily digests, and rating/release warnings.\n\n### Why only new reviews?\nThe actor remembers what it already returned (`stateNamespace`), so each run you pay for and classify only reviews posted since the last run.\n\n### Customization\n\nCustomize the filter criteria for what counts as a new review, the AI triage categories and urgency thresholds, the Google Sheets columns, and the Slack message templates or destination channels.",
+        "width": 480,
+        "height": 1080
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        -432
+      ],
+      "id": "77b2178b-9a83-4568-a0e8-f05ed02b601c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Video walkthrough\n@[youtube](FokBXR2ZnPQ)",
+        "width": 480,
+        "height": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        680
+      ],
+      "id": "bec6640c-6c51-4fea-bd16-0ab79bf872b1",
+      "name": "Video walkthrough"
+    },
+    {
+      "parameters": {
+        "content": "## Schedule and fetch reviews\n\nStarts the workflow on a daily schedule and retrieves Google Play review and summary data from the Apify actor.",
+        "width": 416,
+        "height": 320,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -160
+      ],
+      "id": "44a455d7-9021-4ff4-9b1f-59ed29c29e75",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Filter and AI triage\n\nFilters the retrieved data down to new reviews, classifies them with the Claude model, and flattens the AI output back onto each review for downstream logging and notifications.",
+        "width": 656,
+        "height": 528,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -160
+      ],
+      "id": "2e70edd2-f077-4e9d-8d7e-d434ab862c0e",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Log and route reviews\n\nLogs every enriched review to Google Sheets, then checks whether each review should be treated as urgent or high priority for alerting versus digest handling.",
+        "width": 240,
+        "height": 640,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        -432
+      ],
+      "id": "9d847340-545c-42b0-bae3-8f41ee8020a2",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Send review notifications\n\nPosts immediate Slack alerts for urgent reviews and builds then sends a daily Slack digest for non-urgent reviews grouped by category.",
+        "width": 416,
+        "height": 512,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        -192
+      ],
+      "id": "af5a349c-0eae-44c6-8bc7-9ab004049f04",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Post rating warnings\n\nRuns as a separate lower branch from the review fetch to detect rating or release warnings from app summary rows and post those warnings to Slack.",
+        "width": 416,
+        "height": 336,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        400
+      ],
+      "id": "bf8a4a52-cd09-401c-85e0-39548b9daa13",
+      "name": "Sticky Note5"
+    },
+    {
+      "id": "1",
+      "name": "Every Morning at 8am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "2",
+      "name": "Post to Apify Play Reviews API",
+      "type": "n8n-nodes-base.httpRequest",
+      "notes": "Header Auth credential: name 'Authorization', value 'Bearer <your Apify API token>'.",
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/serkan1907~google-play-reviews-monitor-alerts/run-sync-get-dataset-items",
+        "method": "POST",
+        "options": {
+          "timeout": 300000
+        },
+        "jsonBody": "{\n  \"apps\": [\n    \"com.Slack\",\n    \"notion.id\"\n  ],\n  \"countries\": [\"us\", \"gb\"],\n  \"outputMode\": \"changes\",\n  \"stateNamespace\": \"n8n-ai-triage\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "3",
+      "name": "Filter New Reviews",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c-review",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "review"
+            },
+            {
+              "id": "c-text",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.text }}",
+              "rightValue": ""
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "4",
+      "name": "Analyze Reviews with AI",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "text": "=Rating: {{ $json.rating }}/5\nApp: {{ $json.appName }} (version {{ $json.version || 'unknown' }})\nCountry: {{ $json.country }}\nReview:\n{{ $json.text }}",
+        "options": {
+          "systemPromptTemplate": "You triage Google Play reviews for a mobile app team. Read the review text, its star rating and app version, then fill every field. Judge severity by user impact, not by tone. A 1-star review that only says 'bad' is low. Never invent facts that are not in the review."
+        },
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"category\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"bug_crash\",\n        \"login_account\",\n        \"billing_subscription\",\n        \"performance\",\n        \"ads\",\n        \"feature_request\",\n        \"praise\",\n        \"spam_irrelevant\",\n        \"other\"\n      ],\n      \"description\": \"Main topic of the review\"\n    },\n    \"severity\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"urgent\",\n        \"high\",\n        \"medium\",\n        \"low\"\n      ],\n      \"description\": \"urgent = many users likely blocked (crash on start, cannot log in, charged wrongly, data loss); high = a core feature broken; medium = annoying; low = praise, wishes, spam\"\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"description\": \"One short English sentence describing the user's problem or point\"\n    },\n    \"language\": {\n      \"type\": \"string\",\n      \"description\": \"ISO code of the review language\"\n    },\n    \"replyDraft\": {\n      \"type\": \"string\",\n      \"description\": \"A polite reply from the developer, under 350 characters, in the review's language. Thank the user, address the issue, no promises of dates, no personal data requests. Empty for spam.\"\n    }\n  },\n  \"required\": [\n    \"category\",\n    \"severity\",\n    \"summary\",\n    \"language\",\n    \"replyDraft\"\n  ]\n}"
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "5",
+      "name": "Claude Sonnet Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "position": [
+        660,
+        220
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {
+          "temperature": 0,
+          "maxTokensToSample": 600
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "6",
+      "name": "Merge AI and Review Data",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        900,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Join each AI result back to its review (same order) and flatten for Sheets and Slack.\nconst reviews = $('Filter New Reviews').all();\nreturn $input.all().map((item, i) => {\n  const r = reviews[i].json;\n  const ai = item.json.output ?? {};\n  return { json: {\n    date: r.reviewedAt,\n    app: r.appName,\n    appId: r.appId,\n    country: r.country,\n    rating: r.rating,\n    version: r.version ?? '',\n    category: ai.category ?? 'other',\n    severity: ai.severity ?? 'medium',\n    summary: ai.summary ?? '',\n    review: r.text,\n    replyDraft: ai.replyDraft ?? '',\n    language: ai.language ?? '',\n    reviewUrl: r.reviewUrl ?? '',\n    reviewId: r.reviewId,\n  } };\n});"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "7",
+      "name": "Append Reviews to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        1140,
+        -180
+      ],
+      "parameters": {
+        "columns": {
+          "value": {},
+          "schema": [],
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": []
+        },
+        "options": {},
+        "resource": "sheet",
+        "operation": "append",
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Reviews"
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": ""
+        }
+      },
+      "typeVersion": 4.7
+    },
+    {
+      "id": "8",
+      "name": "Check Review Urgency",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1140,
+        60
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c-urgent",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ ['urgent','high'].includes($json.severity) }}",
+              "rightValue": true
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "9",
+      "name": "Post Urgent Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        1408,
+        -32
+      ],
+      "parameters": {
+        "text": "=:rotating_light: *{{ $json.severity.toUpperCase() }}* · {{ $json.app }} · {{ '★'.repeat($json.rating) }} · v{{ $json.version || '?' }} · _{{ $json.category }}_\n>{{ $json.review.slice(0, 400) }}\n*AI summary:* {{ $json.summary }}\n*Suggested reply:* {{ $json.replyDraft }}\n{{ $json.reviewUrl }}",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#app-incidents"
+        },
+        "otherOptions": {}
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "10",
+      "name": "Compile Daily Digest",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1408,
+        160
+      ],
+      "parameters": {
+        "jsCode": "// Everything that was not urgent, as one daily digest grouped by category.\nconst rows = $input.all().map(i => i.json);\nconst byCat = {};\nfor (const r of rows) (byCat[r.category] ??= []).push(r);\nconst order = Object.entries(byCat).sort((a, b) => b[1].length - a[1].length);\nconst lines = [`:bar_chart: *Daily review digest*: ${rows.length} new reviews (not urgent)`];\nfor (const [cat, list] of order) {\n  const avg = (list.reduce((s, r) => s + r.rating, 0) / list.length).toFixed(1);\n  lines.push(`\\n*${cat.replace(/_/g, ' ')}* · ${list.length} · avg ${avg}★`);\n  for (const r of list.slice(0, 3)) lines.push(`• ${r.app}: ${r.summary}`);\n}\nreturn [{ json: { text: lines.join('\\n') } }];"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "11",
+      "name": "Share Daily Digest to Slack",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        1632,
+        160
+      ],
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#app-reviews"
+        },
+        "otherOptions": {}
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "12",
+      "name": "Process Rating Warnings",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        448,
+        592
+      ],
+      "parameters": {
+        "jsCode": "// Rating and release warnings from the Actor's per-app summary rows. Runs even on days with no new reviews.\nconst summaries = $input.all().map(i => i.json).filter(r => r.type === 'app_summary');\nconst signed = v => (v === undefined || v === null) ? 'n/a' : (v > 0 ? '+' : '') + v;\nconst warn = summaries\n  .filter(s => s.ratingTrend === 'declining' || (s.latestVersionVsPreviousRating ?? 0) <= -0.5)\n  .map(s => `:warning: *${s.appName}*: 7-day rating ${s.last7DaysAvgRating} vs ${s.previous7DaysAvgRating} the week before; version ${s.latestVersion} is rated ${signed(s.latestVersionVsPreviousRating)} vs the previous version.`);\nreturn warn.length ? [{ json: { text: warn.join('\\n') } }] : [];"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "13",
+      "name": "Post Rating Warning to Slack",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        656,
+        592
+      ],
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#app-reviews"
+        },
+        "otherOptions": {}
+      },
+      "typeVersion": 2.2
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "connections": {
+    "Analyze Reviews with AI": {
+      "main": [
+        [
+          {
+            "node": "Merge AI and Review Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Sonnet Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Reviews with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every Morning at 8am": {
+      "main": [
+        [
+          {
+            "node": "Post to Apify Play Reviews API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Review Urgency": {
+      "main": [
+        [
+          {
+            "node": "Post Urgent Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compile Daily Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New Reviews": {
+      "main": [
+        [
+          {
+            "node": "Analyze Reviews with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Daily Digest": {
+      "main": [
+        [
+          {
+            "node": "Share Daily Digest to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Apify Play Reviews API": {
+      "main": [
+        [
+          {
+            "node": "Filter New Reviews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Process Rating Warnings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge AI and Review Data": {
+      "main": [
+        [
+          {
+            "node": "Append Reviews to Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Review Urgency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Rating Warnings": {
+      "main": [
+        [
+          {
+            "node": "Post Rating Warning to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

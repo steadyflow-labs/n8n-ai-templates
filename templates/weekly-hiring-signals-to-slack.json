@@ -1,0 +1,154 @@
+{
+  "name": "Weekly hiring signals to Slack (ATS Jobs Feed)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Weekly hiring signals to Slack\n\n**Who it's for:** sales, recruiting and investor teams who treat hiring as a buying or growth signal.\n\n**What it does**\n1. Every Monday it runs the *ATS Jobs Feed & Hiring Signals* Actor on Apify for your watchlist (company names or careers pages on Greenhouse, Lever, Ashby, SmartRecruiters, Recruitee, Workable).\n2. You get one summary row per company: open roles, new and closed jobs since last week, top team.\n3. A Code node posts the companies that added roles, biggest change first.\n\nThe first run saves a baseline, so changes appear from the second week.",
+        "height": 420,
+        "width": 420,
+        "color": 4
+      },
+      "id": "note-overview",
+      "name": "Sticky Note - Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Setup (5 minutes)\n1. **Apify token:** create a *Header Auth* credential. Name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. **Watchlist:** in *Run ATS Jobs Feed*, edit `companies` in the JSON body (company names, careers-page URLs or `greenhouse:stripe` style).\n3. **Slack:** connect your Slack credential and pick a channel.\n4. **Schedule:** change the day/hour in *Every Monday*.\n\nCost: about $3 per 1,000 company summaries on Apify.",
+        "height": 300,
+        "width": 520,
+        "color": 7
+      },
+      "id": "note-setup",
+      "name": "Sticky Note - Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        200,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Every Monday",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/serkan1907~ats-jobs-feed/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"companies\": [\n    \"openai\",\n    \"anthropic\",\n    \"stripe\",\n    \"ramp\",\n    \"notion\",\n    \"figma\"\n  ],\n  \"outputMode\": \"summaries\",\n  \"stateNamespace\": \"n8n-weekly\"\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "2",
+      "name": "Run ATS Jobs Feed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "notes": "Header Auth credential: name 'Authorization', value 'Bearer <your Apify API token>'."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Companies that are hiring faster since last week, as one Slack message.\nconst rows = $input.all().map(i => i.json).filter(r => r.type === 'company_summary');\nconst growing = rows\n  .filter(r => (r.netChange ?? 0) > 0)\n  .sort((a, b) => b.netChange - a.netChange)\n  .slice(0, 15)\n  .map(r => `\u2022 *${r.company}*: ${r.openJobs} open (+${r.newJobs} new, -${r.closedJobs} closed) \u00b7 top team: ${r.topDepartments?.[0]?.name ?? 'n/a'} \u00b7 ${r.boardUrl}`);\nconst text = growing.length\n  ? `:chart_with_upwards_trend: Hiring signals this week\\n${growing.join('\\n')}`\n  : `No company in your watchlist added roles this week (${rows.length} checked).`;\nreturn [{ json: { text } }];"
+      },
+      "id": "3",
+      "name": "Build Slack message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#hiring-signals",
+          "mode": "name"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "id": "4",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Every Monday": {
+      "main": [
+        [
+          {
+            "node": "Run ATS Jobs Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run ATS Jobs Feed": {
+      "main": [
+        [
+          {
+            "node": "Build Slack message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Slack message": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steadyflow Labs — AI automations that check their own work</title>
+<meta name="description" content="n8n and Make automations for small businesses: an AI support chatbot that answers only from your content, and an AI reader that turns PDF orders and invoices into clean CSV.">
+<meta property="og:title" content="Steadyflow Labs">
+<meta property="og:description" content="AI automations that check their own work. Support chatbots and PDF-to-CSV workflows, built in your own accounts.">
+<meta property="og:image" content="https://steadyflow-labs.github.io/n8n-ai-templates/img/pdf.jpg">
+<link rel="icon" href="img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c1316; --panel:#121c20; --line:#1f2e33; --fg:#e7efee; --muted:#9db0ad;
+  --mint:#a0d6c8; --teal:#127a6e; --teal-2:#18a090;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--mint)}
+img{max-width:100%;display:block}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;line-height:1.15;text-wrap:balance;margin:0}
+.kicker{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mint);font-weight:600}
+
+header{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(12,19,22,.92);backdrop-filter:blur(8px);z-index:5}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:1.1rem}
+.brand img{width:34px;height:34px;border-radius:50%}
+nav{display:flex;gap:22px;align-items:center}
+nav a{color:var(--muted);text-decoration:none;font-size:.95rem}
+nav a:hover{color:var(--fg)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:999px;font-weight:600;text-decoration:none;font-size:.95rem;border:1px solid transparent;white-space:nowrap}
+.btn.primary{background:var(--teal);color:#fff}
+.btn.primary:hover{background:var(--teal-2)}
+.btn.ghost{border-color:var(--line);color:var(--fg)}
+.btn.ghost:hover{border-color:var(--mint)}
+@media (max-width:720px){nav a:not(.btn){display:none}}
+
+.hero{padding-block:72px 56px}
+.hero h1{font-size:clamp(2.1rem,5.2vw,3.6rem);max-width:16ch;margin-top:14px}
+.hero p{color:var(--muted);font-size:1.12rem;max-width:60ch;margin:20px 0 28px}
+.hero .ctas{display:flex;gap:12px;flex-wrap:wrap}
+.rules{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:52px}
+.rules div{background:var(--panel);padding:18px 20px}
+.rules b{display:block;font-family:"Space Grotesk",sans-serif;font-size:1.02rem;margin-bottom:4px}
+.rules span{color:var(--muted);font-size:.92rem}
+@media (max-width:820px){.rules{grid-template-columns:1fr 1fr}}
+@media (max-width:460px){.rules{grid-template-columns:1fr}}
+
+section{padding-block:56px;border-top:1px solid var(--line)}
+section > .wrap > h2{font-size:clamp(1.6rem,3.4vw,2.2rem);margin:10px 0 28px}
+.services{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media (max-width:820px){.services{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.card .shot{aspect-ratio:16/10;object-fit:cover;object-position:top;width:100%;border-bottom:1px solid var(--line)}
+.card .body{padding:22px 24px 24px;display:flex;flex-direction:column;gap:14px;flex:1}
+.card h3{font-size:1.35rem}
+.card p{margin:0;color:var(--muted)}
+.card ul{margin:0;padding-left:18px;color:var(--fg)}
+.card li{margin:4px 0}
+.meta{display:flex;gap:18px;flex-wrap:wrap;font-size:.92rem;color:var(--muted)}
+.meta strong{color:var(--fg);font-size:1.15rem;font-family:"Space Grotesk",sans-serif}
+.card .ctas{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;counter-reset:s}
+@media (max-width:820px){.steps{grid-template-columns:1fr}}
+.step{border:1px solid var(--line);border-radius:14px;padding:22px}
+.step::before{counter-increment:s;content:"0" counter(s);font-family:"Space Grotesk",sans-serif;color:var(--mint);font-weight:700;font-size:.95rem}
+.step h3{font-size:1.12rem;margin:8px 0 6px}
+.step p{margin:0;color:var(--muted);font-size:.95rem}
+
+.proof{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;align-items:start}
+@media (max-width:820px){.proof{grid-template-columns:1fr}}
+.test{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px}
+.test dl{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;margin:14px 0 0;font-size:.95rem}
+.test dt{color:var(--muted)}
+.test dd{margin:0}
+.flag{display:inline-block;background:rgba(214,74,74,.14);color:#f1a3a3;border-radius:6px;padding:2px 8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
+.mini{display:grid;gap:14px}
+.mini a{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center;text-decoration:none;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--panel)}
+.mini a:hover{border-color:var(--mint)}
+.mini img{border-radius:8px;aspect-ratio:4/3;object-fit:cover}
+.mini b{font-family:"Space Grotesk",sans-serif;display:block}
+.mini span{color:var(--muted);font-size:.9rem}
+
+.cta{text-align:center;padding-block:64px}
+.cta h2{font-size:clamp(1.6rem,3.6vw,2.4rem);margin-bottom:12px}
+.cta p{color:var(--muted);max-width:56ch;margin:0 auto 24px}
+.cta .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+footer{border-top:1px solid var(--line);padding-block:28px;color:var(--muted);font-size:.9rem}
+footer .row{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer nav{gap:18px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#"><img src="img/logo.png" alt="">Steadyflow Labs</a>
+    <nav>
+      <a href="#services">Services</a>
+      <a href="#how">How it works</a>
+      <a href="#proof">Proof</a>
+      <a class="btn primary" href="#start">Start a project</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="kicker">n8n · Make · Claude</div>
+    <h1>AI automations that check their own work.</h1>
+    <p>Small-business workflows where the AI answers only from your data, checks its output against your records, and hands off to a person when it isn't sure. Built in your own accounts, so you own everything.</p>
+    <div class="ctas">
+      <a class="btn primary" href="#services">See the two services</a>
+      <a class="btn ghost" href="https://youtu.be/SBhhd1cgslQ" target="_blank" rel="noopener">Watch a 36-second demo</a>
+    </div>
+    <div class="rules">
+      <div><b>No guessing</b><span>Unclear items are flagged in plain language, never filled in.</span></div>
+      <div><b>No duplicates</b><span>Retries and re-runs don't create second records.</span></div>
+      <div><b>No silent failures</b><span>Errors and handoffs go to Slack or email.</span></div>
+      <div><b>Your accounts</b><span>Runs in your n8n or Make, with your keys.</span></div>
+    </div>
+  </div>
+
+  <section id="services">
+    <div class="wrap">
+      <div class="kicker">Services</div>
+      <h2>Two fixed-price builds, delivered in about a week</h2>
+      <div class="services">
+
+        <article class="card">
+          <img class="shot" src="img/pdf.jpg" alt="A faxed purchase order next to the CSV and flags the workflow produced" loading="lazy">
+          <div class="body">
+            <h3>PDF orders and invoices → clean CSV</h3>
+            <p>For teams that retype purchase orders or invoices into an ERP or accounting tool. Every customer layout works, including scans and rotated faxes, with no per-customer templates.</p>
+            <ul>
+              <li>PDFs picked up from an inbox or an upload form</li>
+              <li>PO or invoice number, customer, addresses, line items, prices, dates</li>
+              <li>Checked against your customer and item lists</li>
+              <li>One CSV per document in your import format, plus a log sheet</li>
+              <li>Slack or email alert when a document needs a human look</li>
+            </ul>
+            <div class="meta"><span>from <strong>$300</strong></span><span>about <strong>1 week</strong></span><span>AI cost: a few cents per document</span></div>
+            <div class="ctas">
+              <a class="btn primary" href="https://contra.com/s/bYOsFeXP-ai-workflow-that-turns-pdf-orders-and-invoices-into-clean-csv" target="_blank" rel="noopener">Book on Contra</a>
+              <a class="btn ghost" href="https://youtu.be/SBhhd1cgslQ" target="_blank" rel="noopener">Demo, 36 s</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img class="shot" src="img/chatbot.jpg" alt="Support chatbot answering from a shop's own pages, with the owner's conversation log beside it" loading="lazy">
+          <div class="body">
+            <h3>AI support chatbot that answers from your own content</h3>
+            <p>A website chat trained on your pages, PDFs and FAQs. It cites what it used, says so when the answer isn't there, and passes the question to a person.</p>
+            <ul>
+              <li>Built from your public site and documents</li>
+              <li>Answers only from that content, with sources</li>
+              <li>Hands off to Slack or email when it isn't sure</li>
+              <li>Every conversation logged to Google Sheets</li>
+              <li>Embeds on your website with one snippet</li>
+            </ul>
+            <div class="meta"><span>from <strong>$250</strong></span><span>about <strong>1 week</strong></span><span>You pay only your own AI usage</span></div>
+            <div class="ctas">
+              <a class="btn primary" href="https://contra.com/s/UWqBsRoL-ai-support-chatbot-that-answers-from-your-website-and-docs" target="_blank" rel="noopener">Book on Contra</a>
+              <a class="btn ghost" href="https://youtu.be/4Uk6xBjRrGs" target="_blank" rel="noopener">Demo, 43 s</a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="kicker">How it works</div>
+      <h2>Written brief, real samples, handover in your account</h2>
+      <div class="steps">
+        <div class="step"><h3>Send a short brief</h3><p>Tell me what comes in, where it should go and what counts as a problem. Share a few real examples (anonymised is fine). Everything happens in writing, on your schedule.</p></div>
+        <div class="step"><h3>I build and test on your samples</h3><p>The workflow is built in your n8n or Make account and run against your examples. You get the results and every flag it raised, so you can see what it catches.</p></div>
+        <div class="step"><h3>Handover</h3><p>You get a short written guide and a screen recording. Credentials stay yours, and nothing runs on my servers.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="proof">
+    <div class="wrap">
+      <div class="kicker">Proof</div>
+      <h2>Tested on the messy cases, published in the open</h2>
+      <div class="proof">
+        <div class="test">
+          <h3>PDF reader test, November 2026</h3>
+          <dl>
+            <dt>Clean system PDF</dt><dd>All fields read, no flags</dd>
+            <dt>Faxed PO</dt><dd>Cover sheet, pages rotated 90°, scan noise. PO number, every line and the carrier account read correctly</dd>
+            <dt>Unknown part</dt><dd>Flagged, with its closest catalog match: <span class="flag">88-1042 → 88-1024?</span></dd>
+            <dt>Speed</dt><dd>About 5 seconds per PDF</dd>
+          </dl>
+        </div>
+        <div class="mini">
+          <a href="https://github.com/steadyflow-labs/n8n-ai-templates" target="_blank" rel="noopener"><img src="img/triage.jpg" alt="" loading="lazy"><div><b>Open n8n templates on GitHub</b><span>The chatbot, PDF reader and review triage workflows, free to import.</span></div></a>
+          <a href="https://apify.com/serkan1907/website-to-rag-knowledge-base" target="_blank" rel="noopener"><img src="img/rag.jpg" alt="" loading="lazy"><div><b>Website to RAG knowledge base</b><span>A public Apify tool that turns a site's pages into chatbot-ready chunks.</span></div></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="start" class="cta">
+    <div class="wrap">
+      <h2>Have a process like this?</h2>
+      <p>Book a service on Contra or hire through Upwork, and send a message with what you want automated. You'll get a written reply with scope and price.</p>
+      <div class="ctas">
+        <a class="btn primary" href="https://contra.com/serkan_bal_j3zhmk2l" target="_blank" rel="noopener">Message on Contra</a>
+        <a class="btn ghost" href="https://www.upwork.com/freelancers/~01cceba75c762a4ee0" target="_blank" rel="noopener">Hire on Upwork</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap row">
+    <span>© 2026 Steadyflow Labs. Built with AI tools; every delivery is reviewed by a person.</span>
+    <nav>
+      <a href="https://contra.com/serkan_bal_j3zhmk2l" target="_blank" rel="noopener">Contra</a>
+      <a href="https://www.upwork.com/freelancers/~01cceba75c762a4ee0" target="_blank" rel="noopener">Upwork</a>
+      <a href="https://github.com/steadyflow-labs" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://youtu.be/SBhhd1cgslQ" target="_blank" rel="noopener">YouTube</a>
+      <a href="https://apify.com/serkan1907" target="_blank" rel="noopener">Apify</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

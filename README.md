@@ -30,6 +30,6 @@ Production-minded n8n workflows for small businesses: AI that answers only from 
 ![Support chatbot workflow](media/chatbot-canvas.png)
 
 ## Need one adapted to your business?
-These are starting points. For a version wired into your own tools (CRM, ERP, help desk), see [Plumbline Automation](https://steadyflow-labs.github.io/n8n-ai-templates/).
+These are starting points. For a version wired into your own tools (CRM, ERP, help desk), see [Plumbline Automation](https://plumblineautomation.com).
 
 License: MIT

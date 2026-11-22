@@ -3,19 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Steadyflow Labs — AI automations that check their own work</title>
+<title>Plumbline Automation — AI automations that check their own work</title>
 <meta name="description" content="n8n and Make automations for small businesses: an AI support chatbot that answers only from your content, and an AI reader that turns PDF orders and invoices into clean CSV.">
-<meta property="og:title" content="Steadyflow Labs">
+<meta property="og:title" content="Plumbline Automation">
 <meta property="og:description" content="AI automations that check their own work. Support chatbots and PDF-to-CSV workflows, built in your own accounts.">
-<meta property="og:image" content="https://steadyflow-labs.github.io/n8n-ai-templates/img/pdf.jpg">
-<link rel="icon" href="img/favicon.png">
+<meta property="og:image" content="https://steadyflow-labs.github.io/n8n-ai-templates/img/og.png">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="img/favicon.png" sizes="32x32">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta name="theme-color" content="#0E171E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0c1316; --panel:#121c20; --line:#1f2e33; --fg:#e7efee; --muted:#9db0ad;
-  --mint:#a0d6c8; --teal:#127a6e; --teal-2:#18a090;
+  --bg:#0E171E; --panel:#14212A; --line:#24343F; --fg:#F5F2EA; --muted:#A3AEB5;
+  --mint:#D9AE66; --teal:#B8863B; --teal-2:#CC9A4C; --on-accent:#13202A;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -27,15 +30,15 @@ img{max-width:100%;display:block}
 h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;line-height:1.15;text-wrap:balance;margin:0}
 .kicker{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mint);font-weight:600}
 
-header{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(12,19,22,.92);backdrop-filter:blur(8px);z-index:5}
+header{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(14,23,30,.92);backdrop-filter:blur(8px);z-index:5}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}
 .brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:1.1rem}
-.brand img{width:34px;height:34px;border-radius:50%}
+.brand img{height:40px;width:auto}
 nav{display:flex;gap:22px;align-items:center}
 nav a{color:var(--muted);text-decoration:none;font-size:.95rem}
 nav a:hover{color:var(--fg)}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:999px;font-weight:600;text-decoration:none;font-size:.95rem;border:1px solid transparent;white-space:nowrap}
-.btn.primary{background:var(--teal);color:#fff}
+.btn.primary{background:var(--teal);color:var(--on-accent)}
 .btn.primary:hover{background:var(--teal-2)}
 .btn.ghost{border-color:var(--line);color:var(--fg)}
 .btn.ghost:hover{border-color:var(--mint)}
@@ -102,7 +105,7 @@ footer nav{gap:18px;flex-wrap:wrap}
 
 <header>
   <div class="wrap bar">
-    <a class="brand" href="#"><img src="img/logo.png" alt="">Steadyflow Labs</a>
+    <a class="brand" href="#" aria-label="Plumbline Automation"><img src="img/logo-dark.svg" alt="Plumbline Automation" width="187" height="40"></a>
     <nav>
       <a href="#services">Services</a>
       <a href="#how">How it works</a>
@@ -233,7 +236,7 @@ footer nav{gap:18px;flex-wrap:wrap}
 
 <footer>
   <div class="wrap row">
-    <span>© 2026 Steadyflow Labs. Built with AI tools; every delivery is reviewed by a person.</span>
+    <span>© 2026 Plumbline Automation. Built with AI tools; every delivery is reviewed by a person.</span>
     <nav>
       <a href="https://contra.com/serkan_bal_j3zhmk2l" target="_blank" rel="noopener">Contra</a>
       <a href="https://www.upwork.com/freelancers/~01cceba75c762a4ee0" target="_blank" rel="noopener">Upwork</a>

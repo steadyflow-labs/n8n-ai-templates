@@ -9,7 +9,7 @@
         "downloadAttachments": true,
         "dataPropertyAttachmentsPrefixName": "attachment_"
       },
-      "id": "0af6bc9c-422d-4d70-9310-d815a1146cdf",
+      "id": "cf0ee0d0-9eeb-4f8c-bba0-d4dc6103fd19",
       "name": "New email in order inbox",
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 2.1,
@@ -39,7 +39,7 @@
         },
         "options": {}
       },
-      "id": "1868dc23-3484-42be-a272-bccb863d55fb",
+      "id": "4ca4a31c-2833-4703-b489-b5d352b885d2",
       "name": "Or upload a PO to test",
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.2,
@@ -47,13 +47,13 @@
         0,
         220
       ],
-      "webhookId": "5a73d0ab-f268-44a4-bae6-7668fbe9caa4"
+      "webhookId": "36d07d8b-7823-4a7c-a70a-bb0f13ae8873"
     },
     {
       "parameters": {
         "jsCode": "// One item per PDF attachment, from either the inbox or the test form.\n// Non-PDF attachments (signatures, logos) are ignored.\nconst out = [];\n$input.all().forEach((item, i) => {\n  const j = item.json || {};\n  const rawFrom = String(j.from ?? j['Sender email (optional)'] ?? '');\n  const sender = (rawFrom.match(/[\\w.+-]+@[\\w-]+\\.[\\w.-]+/) || [''])[0].toLowerCase();\n  for (const [key, bin] of Object.entries(item.binary || {})) {\n    const isPdf = String(bin.mimeType || '').includes('pdf') || /\\.pdf$/i.test(bin.fileName || '');\n    if (!isPdf) continue;\n    out.push({\n      json: {\n        source: j.subject !== undefined ? 'email' : 'form',\n        subject: j.subject || '',\n        sender,\n        pdfName: bin.fileName || `${key}.pdf`,\n        received: new Date().toISOString(),\n      },\n      binary: { data: bin },\n      pairedItem: { item: i },\n    });\n  }\n});\nreturn out;\n"
       },
-      "id": "f2388323-5da3-4071-aba7-e5e801cd39f9",
+      "id": "421db430-7cd7-4db3-8696-e72795ee9e15",
       "name": "Get PDF attachments",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -64,9 +64,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// Builds one Claude request per PDF. The PDF is sent as a document, so the model reads\n// the actual pages (scans, rotated faxes, handwriting) instead of extracted text.\n// The model is told to answer only through the tool, so the answer follows the schema below.\n// (Newer models don't accept a forced tool_choice; a missing tool call is caught and flagged downstream.)\nconst MODEL = 'claude-sonnet-5-5';\n\nconst address = { type: 'object', properties: {\n  name: { type: 'string' }, line1: { type: 'string' }, line2: { type: 'string' },\n  city: { type: 'string' }, state: { type: 'string' }, postal_code: { type: 'string' }, country: { type: 'string' } } };\n\nconst schema = {\n  type: 'object',\n  required: ['is_purchase_order', 'lines', 'uncertain_fields'],\n  properties: {\n    is_purchase_order: { type: 'boolean', description: 'false for quotes, invoices, statements or anything that is not an order' },\n    po_number: { type: 'string' },\n    order_date: { type: 'string', description: 'YYYY-MM-DD' },\n    customer_name: { type: 'string', description: 'the buying company' },\n    customer_email: { type: 'string' },\n    bill_to: address,\n    ship_to: address,\n    requested_ship_date: { type: 'string', description: 'YYYY-MM-DD' },\n    shipping_method: { type: 'string' },\n    carrier_account: { type: 'string', description: 'third-party carrier account number if given (UPS, FedEx, etc.)' },\n    notes: { type: 'string', description: 'delivery or handling instructions' },\n    lines: { type: 'array', items: { type: 'object', required: ['customer_part', 'quantity'], properties: {\n      line_no: { type: 'integer' },\n      customer_part: { type: 'string', description: 'part or item number exactly as written on the PO' },\n      description: { type: 'string' },\n      quantity: { type: 'number' },\n      uom: { type: 'string', description: 'unit of measure as written, e.g. EA, CS, BX, FT' },\n      unit_price: { type: 'number' },\n      requested_date: { type: 'string', description: 'YYYY-MM-DD' } } } },\n    uncertain_fields: { type: 'array', items: { type: 'string' },\n      description: 'every field you could not read clearly or had to infer, e.g. \"lines[2].quantity: handwritten, 7 or 1\"' },\n  },\n};\n\nconst PROMPT = `Read this purchase order and record it by calling the record_purchase_order tool exactly once. Do not answer in plain text.\nRules:\n- Copy values exactly as printed. Never invent a value: leave a field out if it is not on the document.\n- Ignore cover sheets, fax headers, terms and conditions pages.\n- Pages may be scanned, rotated or handwritten. If something is hard to read, give your best reading AND list it in uncertain_fields.\n- Quantities and prices are numbers without currency symbols. Dates are YYYY-MM-DD.\n- If the document is not a purchase order, set is_purchase_order to false and return an empty lines list.`;\n\nconst items = $input.all();\nconst out = [];\nfor (let i = 0; i < items.length; i++) {\n  const buf = await this.helpers.getBinaryDataBuffer(i, 'data');\n  out.push({\n    json: {\n      ...items[i].json,\n      body: {\n        model: MODEL,\n        max_tokens: 4096,\n        tools: [{ name: 'record_purchase_order', description: 'Record the purchase order fields', input_schema: schema }],\n        tool_choice: { type: 'auto' },\n        messages: [{ role: 'user', content: [\n          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } },\n          { type: 'text', text: PROMPT },\n        ] }],\n      },\n    },\n    pairedItem: { item: i },\n  });\n}\nreturn out;\n"
+        "jsCode": "// Builds one Claude request per PDF. The PDF is sent as a document, so the model reads\n// the actual pages (scans, rotated faxes, handwriting) instead of extracted text.\n// The model is told to answer only through the tool, so the answer follows the schema below.\n// (Newer models don't accept a forced tool_choice; a missing tool call is caught and flagged downstream.)\nconst MODEL = 'claude-sonnet-5-5';\n\nconst address = { type: 'object', properties: {\n  name: { type: 'string' }, line1: { type: 'string' }, line2: { type: 'string' },\n  city: { type: 'string' }, state: { type: 'string' }, postal_code: { type: 'string' }, country: { type: 'string' } } };\n\nconst schema = {\n  type: 'object',\n  required: ['is_purchase_order', 'lines', 'uncertain_fields'],\n  properties: {\n    is_purchase_order: { type: 'boolean', description: 'false for quotes, invoices, statements or anything that is not an order' },\n    po_number: { type: 'string' },\n    order_date: { type: 'string', description: 'YYYY-MM-DD' },\n    customer_name: { type: 'string', description: 'the buying company' },\n    customer_email: { type: 'string' },\n    bill_to: address,\n    ship_to: address,\n    requested_ship_date: { type: 'string', description: 'YYYY-MM-DD' },\n    shipping_method: { type: 'string' },\n    carrier_account: { type: 'string', description: 'third-party carrier account number if given (UPS, FedEx, etc.)' },\n    notes: { type: 'string', description: 'delivery or handling instructions' },\n    tax_exempt_id: { type: 'string', description: 'sales tax exemption certificate or ID number if printed (schools, districts, public bodies)' },\n    payment_terms: { type: 'string', description: 'payment terms as written, e.g. Net 30' },\n    lines: { type: 'array', items: { type: 'object', required: ['customer_part', 'quantity'], properties: {\n      line_no: { type: 'integer' },\n      customer_part: { type: 'string', description: 'part or item number exactly as written on the PO' },\n      description: { type: 'string' },\n      quantity: { type: 'number' },\n      uom: { type: 'string', description: 'unit of measure as written, e.g. EA, CS, BX, FT' },\n      unit_price: { type: 'number' },\n      requested_date: { type: 'string', description: 'YYYY-MM-DD' } } } },\n    uncertain_fields: { type: 'array', items: { type: 'string' },\n      description: 'every field you could not read clearly or had to infer, e.g. \"lines[2].quantity: handwritten, 7 or 1\"' },\n  },\n};\n\nconst PROMPT = `Read this purchase order and record it by calling the record_purchase_order tool exactly once. Do not answer in plain text.\nRules:\n- Copy values exactly as printed. Never invent a value: leave a field out if it is not on the document.\n- Ignore cover sheets, fax headers, terms and conditions pages.\n- Pages may be scanned, rotated or handwritten. If something is hard to read, give your best reading AND list it in uncertain_fields.\n- Dates on US documents are MM/DD/YYYY; do not list them as uncertain for that reason alone. Do not list routine choices (which address line a value went on) as uncertain. uncertain_fields is only for values you recorded but could not read clearly; do not list page orientation, scan quality in general, or a value that is simply not printed.\n- Quantities and prices are numbers without currency symbols. Dates are YYYY-MM-DD.\n- If the document is not a purchase order, set is_purchase_order to false and return an empty lines list.`;\n\nconst items = $input.all();\nconst out = [];\nfor (let i = 0; i < items.length; i++) {\n  const buf = await this.helpers.getBinaryDataBuffer(i, 'data');\n  out.push({\n    json: {\n      ...items[i].json,\n      body: {\n        model: MODEL,\n        max_tokens: 4096,\n        tools: [{ name: 'record_purchase_order', description: 'Record the purchase order fields', input_schema: schema }],\n        tool_choice: { type: 'auto' },\n        messages: [{ role: 'user', content: [\n          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } },\n          { type: 'text', text: PROMPT },\n        ] }],\n      },\n    },\n    pairedItem: { item: i },\n  });\n}\nreturn out;\n"
       },
-      "id": "ec0c4928-1db7-41cd-a20b-5f2822680db4",
+      "id": "9788319d-15ae-453e-9788-735d805b222d",
       "name": "Build extraction request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -103,7 +103,7 @@
           "timeout": 120000
         }
       },
-      "id": "1b186a17-1efd-4153-a088-7153738399d9",
+      "id": "cd39259f-993e-40b6-b5b8-cc80bc4003e9",
       "name": "Read PO with Claude",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -129,7 +129,7 @@
         },
         "options": {}
       },
-      "id": "f145bcca-2a76-42d2-9666-c1e2b2026de5",
+      "id": "10c659b1-6bd1-4c47-a1ed-a1cd277c9ea8",
       "name": "Load customers",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -154,7 +154,7 @@
         },
         "options": {}
       },
-      "id": "47e2f002-2df7-461a-958c-4886181d7fb2",
+      "id": "200ce798-d3fc-48d2-ad92-ce7dd1132ae7",
       "name": "Load items",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -167,9 +167,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// Checks every extracted order against your reference data and writes plain-language flags.\n// Nothing is guessed: if a value can't be matched, the order is marked \"review\".\nconst PRICE_TOLERANCE = 0.02; // 2% difference allowed between PO price and list price\n\nconst files = $('Build extraction request').all().map(i => i.json);\nconst replies = $('Read PO with Claude').all().map(i => i.json);\nconst customers = $('Load customers').all().map(i => i.json).filter(r => r.customer_id);\nconst catalog = $('Load items').all().map(i => i.json).filter(r => r.sku);\n\nconst norm = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');\nconst dist = (a, b) => { // Levenshtein distance for \"closest match\" hints\n  const m = a.length, n = b.length; const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);\n  for (let j = 1; j <= n; j++) d[0][j] = j;\n  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++)\n    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));\n  return d[m][n];\n};\nconst domainOf = e => (String(e || '').split('@')[1] || '').toLowerCase();\n\nconst out = [];\nreplies.forEach((reply, idx) => {\n  const file = files[idx] || {};\n  const tool = (reply.content || []).find(c => c.type === 'tool_use');\n  const po = tool?.input;\n  const base = { received: file.received, source: file.source, sender: file.sender, pdfName: file.pdfName };\n  if (!po) { out.push({ json: { ...base, status: 'review', flags: ['the AI could not read this PDF; check it by hand'], lines: [] } }); return; }\n  if (po.is_purchase_order === false) return; // quotes, invoices etc. are skipped\n\n  const flags = [];\n  if (!po.po_number) flags.push('no PO number found');\n\n  // Customer: email domain first, then company name.\n  const domains = [domainOf(file.sender), domainOf(po.customer_email)].filter(Boolean);\n  let customer = customers.find(c => c.email_domain && domains.includes(String(c.email_domain).toLowerCase()));\n  if (!customer && po.customer_name) {\n    const n = norm(po.customer_name);\n    customer = customers.find(c => norm(c.name) && (n.includes(norm(c.name)) || norm(c.name).includes(n)));\n  }\n  if (!customer) flags.push(`customer not recognised: \"${po.customer_name || file.sender || 'unknown'}\"`);\n  if (!po.ship_to?.line1) flags.push('no ship-to address found');\n\n  const lines = (po.lines || []).map((l, k) => {\n    const no = l.line_no || k + 1;\n    const part = norm(l.customer_part);\n    const options = catalog.filter(r => !r.customer_id || !customer || String(r.customer_id) === String(customer.customer_id));\n    const hit = options.find(r => norm(r.customer_part) === part) || options.find(r => norm(r.sku) === part);\n    if (!hit) {\n      const closest = options.map(r => [r, Math.min(dist(part, norm(r.sku)), dist(part, norm(r.customer_part)))]).sort((a, b) => a[1] - b[1])[0];\n      flags.push(`line ${no}: part ${l.customer_part || '(blank)'} not recognised` + (closest && closest[1] <= 3 ? `; closest match ${closest[0].sku}` : ''));\n    } else {\n      if (l.uom && hit.uom && norm(l.uom) !== norm(hit.uom)) flags.push(`line ${no}: unit ${l.uom} on PO, ${hit.uom} in catalog`);\n      const list = Number(hit.price);\n      if (l.unit_price != null && list > 0 && Math.abs(l.unit_price - list) / list > PRICE_TOLERANCE)\n        flags.push(`line ${no}: price ${l.unit_price} on PO vs ${list} list`);\n    }\n    if (!(l.quantity > 0)) flags.push(`line ${no}: quantity missing or zero`);\n    return { line_no: no, sku: hit?.sku || '', customer_part: l.customer_part || '', description: l.description || hit?.description || '',\n             quantity: l.quantity ?? '', uom: l.uom || hit?.uom || '', unit_price: l.unit_price ?? hit?.price ?? '', requested_date: l.requested_date || po.requested_ship_date || '' };\n  });\n  if (!lines.length) flags.push('no order lines found');\n  for (const f of po.uncertain_fields || []) flags.push(`unclear on the document: ${f}`);\n\n  out.push({ json: { ...base, poNumber: po.po_number || '', customerName: customer?.name || po.customer_name || '', customerId: customer?.customer_id || '',\n    shipTo: po.ship_to || {}, carrierAccount: po.carrier_account || '', shippingMethod: po.shipping_method || '', notes: po.notes || '',\n    lines, lineCount: lines.length, flags, status: flags.length ? 'review' : 'ok' } });\n});\nreturn out;\n"
+        "jsCode": "// Checks every extracted order against your reference data and writes plain-language flags.\n// Nothing is guessed: if a value can't be matched, the order is marked \"review\".\nconst PRICE_TOLERANCE = 0.02; // 2% difference allowed between PO price and list price\n\nconst files = $('Build extraction request').all().map(i => i.json);\nconst replies = $('Read PO with Claude').all().map(i => i.json);\nconst customers = $('Load customers').all().map(i => i.json).filter(r => r.customer_id);\nconst catalog = $('Load items').all().map(i => i.json).filter(r => r.sku);\n\nconst norm = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');\nconst dist = (a, b) => { // Levenshtein distance for \"closest match\" hints\n  const m = a.length, n = b.length; const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);\n  for (let j = 1; j <= n; j++) d[0][j] = j;\n  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++)\n    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));\n  return d[m][n];\n};\n// Units written in words on POs (\"each\", \"box\", \"pad\") mean the same as catalog codes (EA, BX, PD).\nconst UNIT = { each: 'ea', ea: 'ea', box: 'bx', bx: 'bx', case: 'cs', cs: 'cs', pack: 'pk', pk: 'pk', pkg: 'pk', pad: 'pd', pd: 'pd',\n  set: 'st', st: 'st', roll: 'rl', rl: 'rl', can: 'cn', cn: 'cn', dozen: 'dz', dz: 'dz', ream: 'rm', rm: 'rm' };\nconst unit = u => { const k = norm(u).replace(/s$/, ''); return UNIT[k] || UNIT[norm(u)] || norm(u); };\nconst domainOf = e => (String(e || '').split('@')[1] || '').toLowerCase();\n\nconst out = [];\nreplies.forEach((reply, idx) => {\n  const file = files[idx] || {};\n  const tool = (reply.content || []).find(c => c.type === 'tool_use');\n  const po = tool?.input;\n  const base = { received: file.received, source: file.source, sender: file.sender, pdfName: file.pdfName };\n  if (!po) { out.push({ json: { ...base, status: 'review', flags: ['the AI could not read this PDF; check it by hand'], lines: [] } }); return; }\n  if (po.is_purchase_order === false) return; // quotes, invoices etc. are skipped\n\n  const flags = [];\n  if (!po.po_number) flags.push('no PO number found');\n\n  // Customer: email domain first, then company name.\n  const domains = [domainOf(file.sender), domainOf(po.customer_email)].filter(Boolean);\n  let customer = customers.find(c => c.email_domain && domains.includes(String(c.email_domain).toLowerCase()));\n  if (!customer && po.customer_name) {\n    const n = norm(po.customer_name);\n    customer = customers.find(c => norm(c.name) && (n.includes(norm(c.name)) || norm(c.name).includes(n)));\n  }\n  if (!customer) flags.push(`customer not recognised: \"${po.customer_name || file.sender || 'unknown'}\"`);\n  if (!po.ship_to?.line1) flags.push('no ship-to address found');\n\n  const lines = (po.lines || []).map((l, k) => {\n    const no = l.line_no || k + 1;\n    const part = norm(l.customer_part);\n    const options = catalog.filter(r => !r.customer_id || !customer || String(r.customer_id) === String(customer.customer_id));\n    // A blank part number never matches anything (catalog rows often have a blank customer_part).\n    const hit = !part ? null : options.find(r => norm(r.customer_part) && norm(r.customer_part) === part) || options.find(r => norm(r.sku) === part);\n    if (!part) {\n      flags.push(`line ${no}: no part number on the PO` + (l.description ? ` (\"${l.description}\")` : '') + '; pick the item by hand');\n    } else if (!hit) {\n      // Compare only against codes that exist: an empty customer_part must not count as a near match.\n      const closest = options.map(r => [r, Math.min(...[r.sku, r.customer_part].map(norm).filter(Boolean).map(c => dist(part, c)))]).sort((a, b) => a[1] - b[1])[0];\n      flags.push(`line ${no}: part ${l.customer_part || '(blank)'} not recognised` + (closest && closest[1] <= 3 ? `; closest match ${closest[0].sku}` : ''));\n    } else {\n      if (l.uom && hit.uom && unit(l.uom) !== unit(hit.uom)) flags.push(`line ${no}: unit ${l.uom} on PO, ${hit.uom} in catalog`);\n      const list = Number(hit.price);\n      if (l.unit_price != null && list > 0 && Math.abs(l.unit_price - list) / list > PRICE_TOLERANCE)\n        flags.push(`line ${no}: price ${l.unit_price} on PO vs ${list} list`);\n    }\n    if (!(l.quantity > 0)) flags.push(`line ${no}: quantity missing or zero`);\n    return { line_no: no, sku: hit?.sku || '', customer_part: l.customer_part || '', description: l.description || hit?.description || '',\n             quantity: l.quantity ?? '', uom: l.uom || hit?.uom || '', unit_price: l.unit_price ?? hit?.price ?? '', requested_date: l.requested_date || po.requested_ship_date || '' };\n  });\n  if (!lines.length) flags.push('no order lines found');\n  for (const f of po.uncertain_fields || []) flags.push(`unclear on the document: ${f}`);\n\n  out.push({ json: { ...base, poNumber: po.po_number || '', customerName: customer?.name || po.customer_name || '', customerId: customer?.customer_id || '',\n    shipTo: po.ship_to || {}, carrierAccount: po.carrier_account || '', shippingMethod: po.shipping_method || '', notes: po.notes || '',\n    orderDate: po.order_date || '', taxExemptId: po.tax_exempt_id || '', paymentTerms: po.payment_terms || '',\n    lines, lineCount: lines.length, flags, status: flags.length ? 'review' : 'ok' } });\n});\nreturn out;\n"
       },
-      "id": "152401c4-cd91-4625-ba3f-c1fd3ee0dae4",
+      "id": "15e301fc-0d82-4868-90b2-ba10d01fa195",
       "name": "Validate against reference data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -180,9 +180,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// One CSV per order in the column order your ERP import expects. Edit COLUMNS to match it.\nconst COLUMNS = ['po_number', 'customer_id', 'ship_to_name', 'ship_to_address', 'ship_to_city', 'ship_to_state', 'ship_to_postal_code',\n  'line_no', 'sku', 'customer_part', 'description', 'quantity', 'uom', 'unit_price', 'requested_date', 'shipping_method', 'carrier_account', 'notes', 'needs_review'];\nconst esc = v => { v = v == null ? '' : String(v); return /[\",\\n\\r]/.test(v) ? `\"${v.replace(/\"/g, '\"\"')}\"` : v; };\nconst safe = s => String(s || '').replace(/[^A-Za-z0-9_-]+/g, '-').slice(0, 40);\n\nconst out = [];\nfor (const [i, item] of $input.all().entries()) {\n  const o = item.json; const s = o.shipTo || {};\n  const rows = o.lines.map(l => ({\n    po_number: o.poNumber, customer_id: o.customerId, ship_to_name: s.name, ship_to_address: [s.line1, s.line2].filter(Boolean).join(', '),\n    ship_to_city: s.city, ship_to_state: s.state, ship_to_postal_code: s.postal_code, ...l,\n    shipping_method: o.shippingMethod, carrier_account: o.carrierAccount, notes: o.notes, needs_review: o.status === 'review' ? 'yes' : 'no' }));\n  const csv = [COLUMNS.join(','), ...rows.map(r => COLUMNS.map(c => esc(r[c])).join(','))].join('\\r\\n') + '\\r\\n';\n  const fileName = `${o.status === 'review' ? 'REVIEW_' : ''}PO_${safe(o.poNumber) || 'NO-PO'}_${safe(o.customerId) || 'UNKNOWN'}_${String(o.received || '').slice(0, 10)}.csv`;\n  const binary = { data: await this.helpers.prepareBinaryData(Buffer.from(csv, 'utf8'), fileName, 'text/csv') };\n  out.push({ json: { ...o, fileName }, binary, pairedItem: { item: i } });\n}\nreturn out;\n"
+        "jsCode": "// One CSV per order in the column order your ERP import expects. Edit COLUMNS to match it.\nconst COLUMNS = ['po_number', 'customer_id', 'ship_to_name', 'ship_to_address', 'ship_to_city', 'ship_to_state', 'ship_to_postal_code',\n  'line_no', 'sku', 'customer_part', 'description', 'quantity', 'uom', 'unit_price', 'requested_date', 'shipping_method', 'carrier_account', 'notes', 'order_date', 'tax_exempt_id', 'payment_terms', 'needs_review'];\nconst esc = v => { v = v == null ? '' : String(v); return /[\",\\n\\r]/.test(v) ? `\"${v.replace(/\"/g, '\"\"')}\"` : v; };\nconst safe = s => String(s || '').replace(/[^A-Za-z0-9_-]+/g, '-').slice(0, 40);\n\nconst out = [];\nfor (const [i, item] of $input.all().entries()) {\n  const o = item.json; const s = o.shipTo || {};\n  const rows = o.lines.map(l => ({\n    po_number: o.poNumber, customer_id: o.customerId, ship_to_name: s.name, ship_to_address: [s.line1, s.line2].filter(Boolean).join(', '),\n    ship_to_city: s.city, ship_to_state: s.state, ship_to_postal_code: s.postal_code, ...l,\n    shipping_method: o.shippingMethod, carrier_account: o.carrierAccount, notes: o.notes,\n    order_date: o.orderDate, tax_exempt_id: o.taxExemptId, payment_terms: o.paymentTerms, needs_review: o.status === 'review' ? 'yes' : 'no' }));\n  const csv = [COLUMNS.join(','), ...rows.map(r => COLUMNS.map(c => esc(r[c])).join(','))].join('\\r\\n') + '\\r\\n';\n  const fileName = `${o.status === 'review' ? 'REVIEW_' : ''}PO_${safe(o.poNumber) || 'NO-PO'}_${safe(o.customerId) || 'UNKNOWN'}_${String(o.received || '').slice(0, 10)}.csv`;\n  const binary = { data: await this.helpers.prepareBinaryData(Buffer.from(csv, 'utf8'), fileName, 'text/csv') };\n  out.push({ json: { ...o, fileName }, binary, pairedItem: { item: i } });\n}\nreturn out;\n"
       },
-      "id": "0e8645d4-58ef-41a1-9dd3-61ca20f942dc",
+      "id": "dbaebaff-1a24-4853-9a47-30a43fb46be9",
       "name": "Make one CSV per order",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -206,7 +206,7 @@
         },
         "options": {}
       },
-      "id": "fd55a6a0-9c74-4df2-9817-df236fb542fe",
+      "id": "12fa9167-405e-49d1-8a95-c02c532d0441",
       "name": "Save CSV for ERP import",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
@@ -246,7 +246,7 @@
         },
         "options": {}
       },
-      "id": "bc0520b3-ee1a-4b0b-8cfc-44f733f7e581",
+      "id": "ee07f3b8-5c51-47e4-a314-95c9b1910a03",
       "name": "Log order",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -279,7 +279,7 @@
         },
         "options": {}
       },
-      "id": "ef333a55-d7f6-4d5d-942c-1a9d7de1406d",
+      "id": "39b9a4a8-a804-4909-ad9d-d73aa4168a67",
       "name": "Needs a rep to check?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -299,7 +299,7 @@
         "text": "=:mag: *PO {{ $('Make one CSV per order').item.json.poNumber || '(no PO number)' }} needs a check* · {{ $('Make one CSV per order').item.json.customerName || 'unknown customer' }}\n{{ $('Make one CSV per order').item.json.flags.map(f => '• ' + f).join('\\n') }}\nFile: `{{ $('Make one CSV per order').item.json.fileName }}`",
         "otherOptions": {}
       },
-      "id": "462fb212-7847-493b-b96d-8ca6529ebc24",
+      "id": "be604c2a-6ffb-466b-b381-fa59aa4f3e55",
       "name": "Alert the order desk",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.2,
@@ -314,7 +314,7 @@
         "width": 420,
         "height": 760
       },
-      "id": "e56b0362-e6e9-4110-933b-2baf3f3d940a",
+      "id": "13e3f3ad-24d4-4432-a2fe-a47ff179af94",
       "name": "Overview",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -330,7 +330,7 @@
         "height": 600,
         "color": 6
       },
-      "id": "7005e323-0f39-4e08-9aac-7285edef6942",
+      "id": "faac6636-3160-47c7-9c3d-b3ba9c23be7a",
       "name": "Setup",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -346,7 +346,7 @@
         "height": 300,
         "color": 3
       },
-      "id": "f25055e3-85e3-4dff-bbca-f8921bfa41cb",
+      "id": "8a71d293-2718-4482-9359-fb60ae862944",
       "name": "Tuning",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -362,7 +362,7 @@
         "height": 540,
         "color": 7
       },
-      "id": "ad91d40a-35c5-47c1-84b5-d877bc96cf3f",
+      "id": "f1693bdc-ac96-43d7-a8ba-d94448bdad4c",
       "name": "Step 1: collect PDFs",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -378,7 +378,7 @@
         "height": 540,
         "color": 7
       },
-      "id": "3f3903d0-7661-4950-8a75-4bc9cb6f1b69",
+      "id": "a34c4cf0-619c-4557-8611-e50ef06c1241",
       "name": "Step 2: read with Claude",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -394,7 +394,7 @@
         "height": 540,
         "color": 7
       },
-      "id": "e2549ee4-18fe-48e4-9c71-291d40a4dbf6",
+      "id": "b7f300c2-4583-43f7-9ea8-e1e581070a76",
       "name": "Step 3: check against your data",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -410,7 +410,7 @@
         "height": 540,
         "color": 7
       },
-      "id": "f3f5f9fa-2bd8-4b8f-80a1-112b3485edf4",
+      "id": "d6c4c1e6-6d10-492e-b565-59dd814224c0",
       "name": "Step 4: CSV, log and alert",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
